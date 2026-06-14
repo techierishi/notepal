@@ -14,7 +14,6 @@ marked.use({
     code({ text = "", lang = "markup" } = {}) {
       const grammar = prism.languages[lang] || prism.languages.markup;
       const highlighted = prism.highlight(text, grammar, lang);
-
       return `<pre class="md-code language-${lang}"><code class="language-${lang}">${highlighted}</code></pre>`;
     },
     codespan({ text = "" } = {}) {
@@ -52,8 +51,11 @@ function NotesView(props) {
   const [view, setView] = createSignal("edit");
   const [activeNote, setActiveNote] = createSignal(null);
   const [editContent, setEditContent] = createSignal("");
+  const [editorSeed, setEditorSeed] = createSignal(0);
 
-  const visibleNotes = createMemo(() => props.notes);
+  const visibleNotes = createMemo(() => props.notes || []);
+
+  const remountEditor = () => setEditorSeed((n) => n + 1);
 
   const openPreview = (note) => {
     setActiveNote(note);
@@ -72,6 +74,7 @@ function NotesView(props) {
       setActiveNote(null);
       return;
     }
+
     if (view() === "edit") {
       setView(activeNote() ? "preview" : "list");
       return;
@@ -83,12 +86,12 @@ function NotesView(props) {
     if (!content) return;
 
     if (activeNote()) {
-      await UpdateNote(activeNote().id, content);
+      await props.onUpdateNote?.(activeNote().id, content);
     } else {
       await props.onSave(content);
     }
 
-    await props.onReload();
+    await props.onReload?.();
     setView("list");
     setActiveNote(null);
     setEditContent("");
@@ -96,17 +99,20 @@ function NotesView(props) {
 
   const handleDelete = async (id) => {
     await props.onDelete(id);
-    await props.onReload();
+    await props.onReload?.();
     setView("list");
     setActiveNote(null);
+    setEditContent("");
   };
 
-  const handleEditorKey = (_, e) => {
+  const handleEditorKey = (e) => {
     if (!e) return;
+
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
       handleSave();
     }
+
     if (e.key === "Escape") {
       e.preventDefault();
       goBack();
@@ -146,12 +152,12 @@ function NotesView(props) {
                 .replace(/^#+\s*/, "")
                 .replace(/[*_`]/g, "")
                 .slice(0, 72);
-              const fileId = note.id.split("_").join(" ");
+              const fileId = (note.id || "").split("_").join(" ");
 
               return (
                 <div class="note-row" onClick={() => openPreview(note)}>
-                  <div class="note-row-fileid">{` ${fileId}` || "(empty)"}</div>
-                  <div class="note-row-preview">{` ${clean}` || "(empty)"}</div>
+                  <div class="note-row-fileid">{fileId || "(empty)"}</div>
+                  <div class="note-row-preview">{clean || "(empty)"}</div>
                   <div class="note-row-top">
                     <span class="note-row-date">{fmtDate(note.createdAt)}</span>
                     <button
@@ -321,6 +327,12 @@ function NotesView(props) {
               }}
               language="markdown"
               prism={prism}
+              style={{
+                  height: "100%",
+                  "min-height": "0",
+                  "max-height": "100%",
+                  overflow: "auto"
+                }}
               placeholder="Write in markdown…"
             />
           </div>

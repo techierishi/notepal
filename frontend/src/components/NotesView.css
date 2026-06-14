@@ -293,3 +293,39 @@
 }
 .notes-save-btn:hover    { background: rgba(0,0,0,0.9); }
 .notes-save-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+
+.notes-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.note-md-toolbar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-wrap: wrap;
+}
+
+.note-md-toolbar button {
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.note-editor-container {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.note-editor-container .prism-code-editor {
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+}
