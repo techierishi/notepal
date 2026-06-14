@@ -16,12 +16,14 @@ import {
   DeleteNote,
   UpdateNote,
   WindowHide,
+  SearchString,
   // WindowShow,
   Quit
 } from "../bindings/rilaunch/app";
 
 import SearchBar from "./components/SearchBar";
 import ClipboardView from "./components/ClipboardView";
+import SearchView from "./components/SearchView";
 import NotesView from "./components/NotesView";
 import SettingsView from "./components/SettingsView";
 import StatusBar from "./components/StatusBar";
@@ -30,21 +32,12 @@ import {
   IconNotes,
   IconSettings,
   IconRefresh,
-  IconTrash
+  IconTrash,
+  IconApps
 } from "./components/Icons";
 import "./App.css";
 
-const TABS = ["clipboard", "notes"];
-const SHELL_HISTORY_KEY = "rilaunch_shell_history";
-
-function loadShellHistory() {
-  try {
-    const raw = localStorage.getItem(SHELL_HISTORY_KEY);
-    return JSON.parse(raw || "[]");
-  } catch {
-    return [];
-  }
-}
+const TABS = ["search", "clipboard", "notes"];
 
 function saveShellHistoryItem(cmd) {
   const hist = loadShellHistory().filter((h) => h !== cmd);
@@ -53,7 +46,7 @@ function saveShellHistoryItem(cmd) {
 }
 
 function App() {
-  const [activeTab, setActiveTab] = createSignal("clipboard");
+  const [activeTab, setActiveTab] = createSignal("search");
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedIndex, setSelectedIndex] = createSignal(0);
   const [clipboardData, setClipboardData] = createSignal([]);
@@ -63,7 +56,6 @@ function App() {
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
   const [statusMsg, setStatusMsg] = createSignal("");
   const [statusColor, setStatusColor] = createSignal("info");
-  const [shellHistory, setShellHistory] = createSignal(loadShellHistory());
 
   let statusTimer;
   let searchInputRef;
@@ -76,6 +68,18 @@ function App() {
     setStatusColor(type);
     statusTimer = setTimeout(() => setStatusMsg(""), 2500);
   };
+
+  const searchData = async (term) => {
+    const result = await SearchString(term);
+    console.log("Search results:", result);
+    return ""
+  };
+  const filteredSearchData = async () => {
+    const term = searchQuery().trim().toLowerCase();
+    if (!term) return await searchData(term);
+  };
+  const searchSelectedIndex = () => {};
+  const handleSearchItemClick = async (item) => {};
 
   const filteredClipboardData = createMemo(() => {
     const term = searchQuery().trim().toLowerCase();
@@ -93,13 +97,6 @@ function App() {
       const tag = (n.tag || "").toLowerCase();
       return content.includes(term) || tag.includes(term);
     });
-  });
-
-  const shellSuggestion = createMemo(() => {
-    if (activeTab() !== "shell") return "";
-    const q = searchQuery().trim();
-    if (!q) return "";
-    return shellHistory().find((h) => h.toLowerCase().startsWith(q.toLowerCase())) || "";
   });
 
   const searchPlaceholder = () => {
@@ -129,10 +126,15 @@ function App() {
       setClipboardSelectedIndex(0);
     }
 
+    if (tab === "search") queueMicrotask(() => void loadSearchData());
     if (tab === "clipboard") queueMicrotask(() => void loadClipboardData());
     if (tab === "notes") queueMicrotask(() => void loadNotes());
 
     focusSearch();
+  };
+
+  const loadSearchData = async () => {
+    setSearchQuery("");
   };
 
   const loadClipboardData = async () => {
@@ -256,7 +258,7 @@ function App() {
       return;
     }
 
-    if ((e.metaKey || e.ctrlKey) && ["1", "2"].includes(e.key)) {
+    if ((e.metaKey || e.ctrlKey) && ["1", "2", "3"].includes(e.key)) {
       e.preventDefault();
       switchTab(TABS[parseInt(e.key, 10) - 1]);
       return;
@@ -305,7 +307,9 @@ function App() {
     document.addEventListener("keydown", handleKeyDown, true);
     void loadClipboardData();
 
-    const offHotkey = Events.On("Backend:GlobalHotkeyEvent", () => WindowShow());
+    const offHotkey = Events.On("Backend:GlobalHotkeyEvent", () =>
+      WindowShow()
+    );
     const offClipboard = Events.On("ClipboardUpdated", () => {
       if (activeTab() === "clipboard") void loadClipboardData();
     });
@@ -337,8 +341,6 @@ function App() {
             value={searchQuery()}
             onInput={setSearchQuery}
             placeholder={searchPlaceholder()}
-            isShellMode={false}
-            suggestion={shellSuggestion()}
             onMenuClick={(e) => {
               e.stopPropagation();
               setIsMenuOpen((o) => !o);
@@ -351,6 +353,7 @@ function App() {
               onClick={(e) => e.stopPropagation()}
             >
               <span class="plugin-menu-title">
+                {activeTab() === "search" && "Search"}
                 {activeTab() === "clipboard" && "Clipboard"}
                 {activeTab() === "notes" && "Notes"}
               </span>
@@ -391,10 +394,22 @@ function App() {
             <button
               class={
                 "tab-btn" +
-                (activeTab() === "clipboard" && !showSettings() ? " active" : "")
+                (activeTab() === "search" && !showSettings() ? " active" : "")
+              }
+              onClick={() => switchTab("search")}
+              title="Search Ctrl+1"
+            >
+              <IconApps />
+            </button>
+            <button
+              class={
+                "tab-btn" +
+                (activeTab() === "clipboard" && !showSettings()
+                  ? " active"
+                  : "")
               }
               onClick={() => switchTab("clipboard")}
-              title="Clipboard Ctrl+1"
+              title="Clipboard Ctrl+2"
             >
               <IconClipboard />
             </button>
@@ -405,7 +420,7 @@ function App() {
                 (activeTab() === "notes" && !showSettings() ? " active" : "")
               }
               onClick={() => switchTab("notes")}
-              title="Notes Ctrl+2"
+              title="Notes Ctrl+3"
             >
               <IconNotes />
             </button>
@@ -428,6 +443,14 @@ function App() {
           <div class="content-panel">
             <Show when={showSettings()}>
               <SettingsView onClose={() => setShowSettings(false)} />
+            </Show>
+            <Show when={!showSettings() && activeTab() === "search"}>
+              <SearchView
+                searchData={searchQuery()}
+                filteredSearchData={filteredSearchData()}
+                searchSelectedIndex={searchSelectedIndex()}
+                onItemClick={handleSearchItemClick}
+              />
             </Show>
 
             <Show when={!showSettings() && activeTab() === "clipboard"}>

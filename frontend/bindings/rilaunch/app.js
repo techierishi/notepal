@@ -55,14 +55,6 @@ export function GetNotesDir() {
 }
 
 /**
- * @param {string} name
- * @returns {$CancellablePromise<string>}
- */
-export function Greet(name) {
-    return $Call.ByID(2659711170, name);
-}
-
-/**
  * @returns {$CancellablePromise<void>}
  */
 export function Quit() {
@@ -82,6 +74,14 @@ export function RegisterHotKey() {
  */
 export function SaveNote(content) {
     return $Call.ByID(717593036, content);
+}
+
+/**
+ * @param {string} query
+ * @returns {$CancellablePromise<string>}
+ */
+export function SearchString(query) {
+    return $Call.ByID(1177071260, query);
 }
 
 /**

@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"rilaunch/pkg/clipm"
 	"rilaunch/pkg/config"
+	"rilaunch/pkg/findm"
 	"rilaunch/pkg/notes"
 	goruntime "runtime"
 	"strings"
@@ -74,12 +75,34 @@ func (a *App) startup(ctx context.Context) {
 	a.RegisterHotKey()
 }
 
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
-}
-
 func (a *App) RegisterHotKey() {
 	go registerHotkey(a)
+}
+
+func (a *App) SearchString(query string) string {
+	ctx := context.Background()
+	finder := findm.New([]string{
+		"/Users/sinkisinha/Documents/Rishi/rilaunch",
+	})
+
+	if query == "" {
+		return ""
+	}
+
+	results, err := finder.Search(ctx, findm.SearchOptions{
+		Query:       fmt.Sprintf("%s", query),
+		IgnoreCase:  true,
+		Extensions:  []string{"go", "md", "txt"},
+		ExcludeDirs: []string{".git", "node_modules", "vendor"},
+		MaxFileSize: 2 * 1024 * 1024,
+		Limit:       50,
+	})
+	fmt.Printf("Search results: %+v\n", results)
+	if err != nil {
+		return fmt.Sprintf("Search error: %v\n", err)
+	}
+
+	return fmt.Sprintf("Search results: %+v\n", results)
 }
 
 func (a *App) GetClipData(name string) string {
