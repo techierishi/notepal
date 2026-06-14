@@ -11,10 +11,11 @@
   },
   "dependencies": {
     "@wailsio/runtime": "^3.0.0-alpha.79",
-    "easymde": "^2.21.0",
     "fuse.js": "^7.4.2",
     "marked": "^18.0.5",
-    "solid-js": "^1.8.7"
+    "prismjs": "^1.30.0",
+    "solid-js": "^1.8.7",
+    "solid-prism-editor": "^3.2.0"
   },
   "devDependencies": {
     "@rolldown/binding-darwin-arm64": "latest",

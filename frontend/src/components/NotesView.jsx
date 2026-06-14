@@ -1,24 +1,21 @@
-import {
-  createSignal,
-  createMemo,
-  For,
-  Show,
-  onCleanup,
-  createEffect
-} from "solid-js";
+import { createSignal, createMemo, For, Show } from "solid-js";
 import "./NotesView.css";
 import { marked } from "marked";
-import EasyMDE from "easymde";
-import "easymde/dist/easymde.min.css";
+import { Editor } from "solid-prism-editor";
+import "solid-prism-editor/layout.css";
+import "solid-prism-editor/themes/github-light.css";
+
+import prism from "prismjs";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-css";
 
 marked.use({
   renderer: {
-    code({ text = "" } = {}) {
-      const esc = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      return `<pre class="md-code"><code>${esc}</code></pre>`;
+    code({ text = "", lang = "markup" } = {}) {
+      const grammar = prism.languages[lang] || prism.languages.markup;
+      const highlighted = prism.highlight(text, grammar, lang);
+
+      return `<pre class="md-code language-${lang}"><code class="language-${lang}">${highlighted}</code></pre>`;
     },
     codespan({ text = "" } = {}) {
       const esc = (typeof text === "string" ? text : String(text))
@@ -56,9 +53,6 @@ function NotesView(props) {
   const [activeNote, setActiveNote] = createSignal(null);
   const [editContent, setEditContent] = createSignal("");
 
-  let textareaRef;
-  let editor;
-
   const visibleNotes = createMemo(() => props.notes);
 
   const openPreview = (note) => {
@@ -85,7 +79,7 @@ function NotesView(props) {
   };
 
   const handleSave = async () => {
-    const content = (editor ? editor.value() : editContent()).trim();
+    const content = editContent().trim();
     if (!content) return;
 
     if (activeNote()) {
@@ -108,6 +102,7 @@ function NotesView(props) {
   };
 
   const handleEditorKey = (_, e) => {
+    if (!e) return;
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
       handleSave();
@@ -117,50 +112,6 @@ function NotesView(props) {
       goBack();
     }
   };
-
-  createEffect(() => {
-    if (view() !== "edit" || !textareaRef) return;
-
-    queueMicrotask(() => {
-      if (editor) {
-        editor.toTextArea();
-        editor = null;
-      }
-
-      editor = new EasyMDE({
-        element: textareaRef,
-        initialValue: editContent(),
-        spellChecker: false,
-        autofocus: true,
-        status: false,
-        toolbar: false,
-        autoDownloadFontAwesome: false,
-        placeholder: "Write in markdown…",
-        renderingConfig: {
-          singleLineBreaks: true
-        }
-      });
-
-      editor.codemirror.on("change", () => {
-        setEditContent(editor.value());
-      });
-
-      editor.codemirror.on("keydown", handleEditorKey);
-
-      queueMicrotask(() => {
-        editor?.codemirror.setSize("100%", "100%");
-        editor?.codemirror.refresh();
-        editor?.codemirror?.focus();
-      });
-    });
-  });
-
-  onCleanup(() => {
-    if (editor) {
-      editor.toTextArea();
-      editor = null;
-    }
-  });
 
   return (
     <div class="notes-view">
@@ -358,7 +309,21 @@ function NotesView(props) {
             </div>
           </div>
 
-          <textarea ref={textareaRef} />
+          <div
+            onKeyDown={handleEditorKey}
+            class="note-editor-container"
+            style={{ height: "100%", overflowY: "auto" }}
+          >
+            <Editor
+              value={activeNote()?.content || ""}
+              onUpdate={(val) => {
+                setEditContent(val);
+              }}
+              language="markdown"
+              prism={prism}
+              placeholder="Write in markdown…"
+            />
+          </div>
         </div>
       </Show>
     </div>
