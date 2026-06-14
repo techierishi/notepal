@@ -1,4 +1,8 @@
 import { createSignal, onMount } from 'solid-js';
+import {
+  GetNotesDir,
+  ChooseNotesDir
+} from "../../bindings/rilaunch/app";
 import './SettingsView.css';
 
 function SettingsView(props) {

@@ -168,13 +168,21 @@ func (a *App) ChooseNotesDir() string {
 		return ""
 	}
 
-	a.wailsApp.Dialog.SaveFileWithOptions(&application.SaveFileDialogOptions{})
+	dialog := a.wailsApp.Dialog.OpenFile()
+	dialog.SetTitle("Select notes directory")
+	dialog.CanChooseDirectories(true)
 
-	// settings := config.LoadSettings()
-	// settings.NotesDir = newDir.
-	// config.SaveSettings(settings)
-	// a.notesStore.Dir = newDir
-	return ""
+	newDir, err := dialog.PromptForSingleSelection()
+	if err != nil || newDir == "" {
+		return ""
+	}
+
+	settings := config.LoadSettings()
+	settings.NotesDir = newDir
+	config.SaveSettings(settings)
+	a.notesStore.Dir = newDir
+
+	return newDir
 }
 
 func extractMacOSIconBase64(appPath string) string {
@@ -253,12 +261,12 @@ func (a *App) makeWindow() *application.WebviewWindow {
 		Title: "RiLaunch",
 		URL:   "/",
 
-		Width:  700,
-		Height: 622,
+		Width:  650,
+		Height: 620,
 
 		Frameless:     true,
-		DisableResize: true,
-		AlwaysOnTop:   true,
+		DisableResize: false,
+		AlwaysOnTop:   false,
 
 		BackgroundType:   application.BackgroundTypeTransparent,
 		BackgroundColour: application.NewRGBA(0, 0, 0, 0),
