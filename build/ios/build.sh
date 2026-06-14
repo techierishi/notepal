@@ -3,7 +3,7 @@ set -e
 
 # Build configuration
 APP_NAME="rilaunch"
-BUNDLE_ID="com.pal.rilaunch"
+BUNDLE_ID="com.palapps.rilaunch"
 VERSION="0.1.0"
 BUILD_NUMBER="0.1.0"
 BUILD_DIR="build/ios"

@@ -3462,7 +3462,7 @@ function WindowHide() {
     return ByID(2361993597);
 }
 
-var _tmpl$$6 = /* @__PURE__ */ template(`<span class=shell-prompt-icon>$`), _tmpl$2$5 = /* @__PURE__ */ template(`<div class=shell-ghost aria-hidden=true><span class=ghost-typed></span><span class=ghost-suggestion>`), _tmpl$3$5 = /* @__PURE__ */ template(`<div class=search-bar><div class=search-input-wrap><input type=text autocomplete=off></div><button class=search-menu-btn title=Menu><svg width=16 height=16 viewBox="0 0 16 16"fill=currentColor><circle cx=8 cy=3 r=1.5></circle><circle cx=8 cy=8 r=1.5></circle><circle cx=8 cy=13 r=1.5>`), _tmpl$4$5 = /* @__PURE__ */ template(`<svg class=search-icon width=16 height=16 viewBox="0 0 16 16"fill=none stroke=currentColor stroke-width=1.6 stroke-linecap=round stroke-linejoin=round><circle cx=6.5 cy=6.5 r=4.5></circle><line x1=10.5 y1=10.5 x2=14 y2=14>`);
+var _tmpl$$7 = /* @__PURE__ */ template(`<span class=shell-prompt-icon>$`), _tmpl$2$6 = /* @__PURE__ */ template(`<div class=shell-ghost aria-hidden=true><span class=ghost-typed></span><span class=ghost-suggestion>`), _tmpl$3$5 = /* @__PURE__ */ template(`<div class=search-bar><div class=search-input-wrap><input type=text autocomplete=off></div><button class=search-menu-btn title=Menu><svg width=16 height=16 viewBox="0 0 16 16"fill=currentColor><circle cx=8 cy=3 r=1.5></circle><circle cx=8 cy=8 r=1.5></circle><circle cx=8 cy=13 r=1.5>`), _tmpl$4$4 = /* @__PURE__ */ template(`<svg class=search-icon width=16 height=16 viewBox="0 0 16 16"fill=none stroke=currentColor stroke-width=1.6 stroke-linecap=round stroke-linejoin=round><circle cx=6.5 cy=6.5 r=4.5></circle><line x1=10.5 y1=10.5 x2=14 y2=14>`);
 function SearchBar(props) {
   const ghostRemainder = () => {
     const sug = props.suggestion || "";
@@ -3478,10 +3478,10 @@ function SearchBar(props) {
         return props.isShellMode;
       },
       get fallback() {
-        return _tmpl$4$5();
+        return _tmpl$4$4();
       },
       get children() {
-        return _tmpl$$6();
+        return _tmpl$$7();
       }
     }), _el$3);
     insert(_el$3, createComponent(Show, {
@@ -3489,7 +3489,7 @@ function SearchBar(props) {
         return memo(() => !!props.isShellMode)() && ghostRemainder();
       },
       get children() {
-        var _el$4 = _tmpl$2$5(), _el$5 = _el$4.firstChild, _el$6 = _el$5.nextSibling;
+        var _el$4 = _tmpl$2$6(), _el$5 = _el$4.firstChild, _el$6 = _el$5.nextSibling;
         insert(_el$5, () => props.value);
         insert(_el$6, ghostRemainder);
         return _el$4;
@@ -3515,18 +3515,18 @@ function SearchBar(props) {
 }
 delegateEvents(["input", "click"]);
 
-var _tmpl$$5 = /* @__PURE__ */ template(`<svg class=eye-icon width=13 height=13 viewBox="0 0 24 24"fill=none stroke=currentColor stroke-width=2.2 stroke-linecap=round stroke-linejoin=round><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx=12 cy=12 r=3>`), _tmpl$2$4 = /* @__PURE__ */ template(`<svg class=eye-icon width=13 height=13 viewBox="0 0 24 24"fill=none stroke=currentColor stroke-width=2.2 stroke-linecap=round stroke-linejoin=round><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1=1 y1=1 x2=23 y2=23>`), _tmpl$3$4 = /* @__PURE__ */ template(`<div class=clip-empty>`), _tmpl$4$4 = /* @__PURE__ */ template(`<div class=clipboard-view><div class=clipboard-list>`), _tmpl$5$3 = /* @__PURE__ */ template(`<div><div></div><div class=clip-meta><span class=clip-type></span><div class=clip-meta-right><button class=clip-mask-btn></button><span class=clip-time>`);
-const IconEye = () => _tmpl$$5();
-const IconEyeSlash = () => _tmpl$2$4();
+var _tmpl$$6 = /* @__PURE__ */ template(`<svg class=eye-icon width=13 height=13 viewBox="0 0 24 24"fill=none stroke=currentColor stroke-width=2.2 stroke-linecap=round stroke-linejoin=round><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx=12 cy=12 r=3>`), _tmpl$2$5 = /* @__PURE__ */ template(`<svg class=eye-icon width=13 height=13 viewBox="0 0 24 24"fill=none stroke=currentColor stroke-width=2.2 stroke-linecap=round stroke-linejoin=round><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1=1 y1=1 x2=23 y2=23>`), _tmpl$3$4 = /* @__PURE__ */ template(`<div class=clip-empty>`), _tmpl$4$3 = /* @__PURE__ */ template(`<div class=clipboard-view><div class=clipboard-list>`), _tmpl$5$2 = /* @__PURE__ */ template(`<div><div></div><div class=clip-meta><span class=clip-type></span><div class=clip-meta-right><button class=clip-mask-btn></button><span class=clip-time>`);
+const IconEye = () => _tmpl$$6();
+const IconEyeSlash = () => _tmpl$2$5();
 function ClipboardView(props) {
   return (() => {
-    var _el$3 = _tmpl$4$4(), _el$4 = _el$3.firstChild;
+    var _el$3 = _tmpl$4$3(), _el$4 = _el$3.firstChild;
     insert(_el$4, createComponent(For, {
       get each() {
         return props.filteredClipboardData;
       },
       children: (item, index) => (() => {
-        var _el$6 = _tmpl$5$3(), _el$7 = _el$6.firstChild, _el$8 = _el$7.nextSibling, _el$9 = _el$8.firstChild, _el$0 = _el$9.nextSibling, _el$1 = _el$0.firstChild, _el$10 = _el$1.nextSibling;
+        var _el$6 = _tmpl$5$2(), _el$7 = _el$6.firstChild, _el$8 = _el$7.nextSibling, _el$9 = _el$8.firstChild, _el$0 = _el$9.nextSibling, _el$1 = _el$0.firstChild, _el$10 = _el$1.nextSibling;
         _el$6.$$click = () => props.onItemClick(item);
         insert(_el$7, () => item.content || item.text || "No content");
         insert(_el$9, () => item.type || "text");
@@ -3578,46 +3578,46 @@ function ClipboardView(props) {
 }
 delegateEvents(["click"]);
 
-var _tmpl$3$3 = /* @__PURE__ */ template(`<div class=search-empty>`), _tmpl$4$3 = /* @__PURE__ */ template(`<div class=search-view><div class=search-list>`), _tmpl$5$2 = /* @__PURE__ */ template(`<div><div></div><div class=search-meta><span class=search-type></span><div class=search-meta-right><span class=search-id>`);
+var _tmpl$$5 = /* @__PURE__ */ template(`<div class=search-empty>`), _tmpl$2$4 = /* @__PURE__ */ template(`<div class=search-view><div class=search-list>`), _tmpl$3$3 = /* @__PURE__ */ template(`<div><div></div><div class=search-meta><span class=search-type></span><div class=search-meta-right><span class=search-id>`);
 function SearchView(props) {
   return (() => {
-    var _el$3 = _tmpl$4$3(), _el$4 = _el$3.firstChild;
-    insert(_el$4, createComponent(For, {
+    var _el$ = _tmpl$2$4(), _el$2 = _el$.firstChild;
+    insert(_el$2, createComponent(For, {
       get each() {
         return props.filteredSearchData;
       },
       children: (item, index) => (() => {
-        var _el$6 = _tmpl$5$2(), _el$7 = _el$6.firstChild, _el$8 = _el$7.nextSibling, _el$9 = _el$8.firstChild, _el$0 = _el$9.nextSibling, _el$1 = _el$0.firstChild;
-        _el$6.$$click = () => props.onItemClick(item);
-        insert(_el$7, () => item.content || item.text || "No content");
-        insert(_el$9, () => item.type || "text");
-        insert(_el$1, (() => {
+        var _el$4 = _tmpl$3$3(), _el$5 = _el$4.firstChild, _el$6 = _el$5.nextSibling, _el$7 = _el$6.firstChild, _el$8 = _el$7.nextSibling, _el$9 = _el$8.firstChild;
+        _el$4.$$click = () => props.onItemClick(item);
+        insert(_el$5, () => item.content || item.text || "No content");
+        insert(_el$7, () => item.type || "text");
+        insert(_el$9, (() => {
           var _c$ = memo(() => !!item.id);
           return () => _c$() ? item.id : "";
         })());
         createRenderEffect((_p$) => {
           var _v$ = `search-item${index() === props.searchSelectedIndex ? " selected" : ""}`, _v$2 = `search-text${item.is_secret ? " masked" : ""}`;
-          _v$ !== _p$.e && className(_el$6, _p$.e = _v$);
-          _v$2 !== _p$.t && className(_el$7, _p$.t = _v$2);
+          _v$ !== _p$.e && className(_el$4, _p$.e = _v$);
+          _v$2 !== _p$.t && className(_el$5, _p$.t = _v$2);
           return _p$;
         }, {
           e: void 0,
           t: void 0
         });
-        return _el$6;
+        return _el$4;
       })()
     }), null);
-    insert(_el$4, createComponent(Show, {
+    insert(_el$2, createComponent(Show, {
       get when() {
         return props.filteredSearchData?.length === 0;
       },
       get children() {
-        var _el$5 = _tmpl$3$3();
-        insert(_el$5, () => props.searchData.length > 0 ? "No matching items" : "Search is empty");
-        return _el$5;
+        var _el$3 = _tmpl$$5();
+        insert(_el$3, () => props.searchData.length > 0 ? "No matching items" : "Search is empty");
+        return _el$3;
       }
     }), null);
-    return _el$3;
+    return _el$;
   })();
 }
 delegateEvents(["click"]);
