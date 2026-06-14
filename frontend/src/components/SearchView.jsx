@@ -1,42 +1,30 @@
-import { For, Show } from 'solid-js';
-import './SearchView.css';
+import "./SearchView.css";
+import { Editor } from "solid-prism-editor";
+import "solid-prism-editor/layout.css";
+import "solid-prism-editor/themes/github-light.css";
 
+import prism from "prismjs";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-css";
 
 function SearchView(props) {
   return (
     <div class="search-view">
       <div class="search-list">
-        <For each={props.filteredSearchData}>
-          {(item, index) => (
-            <div
-              class={`search-item${index() === props.searchSelectedIndex ? ' selected' : ''}`}
-              onClick={() => props.onItemClick(item)}
-            >
-              <div class={`search-text${item.is_secret ? ' masked' : ''}`}>
-                {item.content || item.text || 'No content'}
-              </div>
-              <div class="search-meta">
-                <span class="search-type">{item.type || 'text'}</span>
-                <div class="search-meta-right">
-
-                  <span class="search-id">
-                    {item.id ? item.id : ''}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </For>
-        <Show when={props.filteredSearchData?.length === 0}>
-          <div class="search-empty">
-            {props.searchData.length > 0 ? 'No matching items' : 'Search is empty'}
-          </div>
-        </Show>
+        <Editor
+          class="search-editor"
+          value={
+            typeof props?.filteredSearchData === "string"
+              ? props.filteredSearchData
+              : JSON.stringify(props?.filteredSearchData ?? "", null, 2)
+          }
+          language="text"
+          prism={prism}
+          placeholder="No data found..."
+        />
       </div>
     </div>
   );
 }
 
 export default SearchView;
-
-

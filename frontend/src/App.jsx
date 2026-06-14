@@ -16,8 +16,8 @@ import {
   DeleteNote,
   UpdateNote,
   WindowHide,
+  WindowShow,
   SearchString,
-  // WindowShow,
   Quit
 } from "../bindings/rilaunch/app";
 
@@ -33,22 +33,17 @@ import {
   IconSettings,
   IconRefresh,
   IconTrash,
-  IconApps
+  IconFind
 } from "./components/Icons";
 import "./App.css";
 
 const TABS = ["search", "clipboard", "notes"];
 
-function saveShellHistoryItem(cmd) {
-  const hist = loadShellHistory().filter((h) => h !== cmd);
-  hist.unshift(cmd);
-  localStorage.setItem(SHELL_HISTORY_KEY, JSON.stringify(hist.slice(0, 50)));
-}
-
 function App() {
   const [activeTab, setActiveTab] = createSignal("search");
   const [searchQuery, setSearchQuery] = createSignal("");
   const [selectedIndex, setSelectedIndex] = createSignal(0);
+  const [searchResults, setSearchResults] = createSignal([]);
   const [clipboardData, setClipboardData] = createSignal([]);
   const [clipboardSelectedIndex, setClipboardSelectedIndex] = createSignal(0);
   const [notesList, setNotesList] = createSignal([]);
@@ -61,6 +56,7 @@ function App() {
   let searchInputRef;
   let clipboardLoadId = 0;
   let notesLoadId = 0;
+  let searchLoadId = 0;
 
   const showStatus = (msg, type = "info") => {
     clearTimeout(statusTimer);
@@ -71,15 +67,37 @@ function App() {
 
   const searchData = async (term) => {
     const result = await SearchString(term);
-    console.log("Search results:", result);
-    return ""
+    try {
+      const data = JSON.parse(result || "[]");
+      let stringified = data.map((item) => {
+        let preparedString = "";
+        preparedString += item.file ? `File:${item.file} \n` : "";
+        preparedString += item.line ? `Line:${item.line} \n` : "";
+        preparedString += item.content ? `Content:${item.content} \n` : "";
+        return `${preparedString} \n------------------------------------------\n`;
+      });
+      return stringified.join("\n");
+    } catch (e) {
+      return 'No results found...';
+    }
   };
-  const filteredSearchData = async () => {
-    const term = searchQuery().trim().toLowerCase();
-    if (!term) return await searchData(term);
+
+  const handleSearchItemClick = async (item) => {
+    try {
+      const text =
+        typeof item === "string"
+          ? item
+          : item?.content || item?.text || item?.value || item?.label || "";
+
+      if (text) {
+        await navigator.clipboard.writeText(text);
+      }
+      WindowHide();
+    } catch (e) {
+      console.error("Failed to handle search item click:", e);
+      showStatus("Failed to use search item", "error");
+    }
   };
-  const searchSelectedIndex = () => {};
-  const handleSearchItemClick = async (item) => {};
 
   const filteredClipboardData = createMemo(() => {
     const term = searchQuery().trim().toLowerCase();
@@ -126,15 +144,10 @@ function App() {
       setClipboardSelectedIndex(0);
     }
 
-    if (tab === "search") queueMicrotask(() => void loadSearchData());
     if (tab === "clipboard") queueMicrotask(() => void loadClipboardData());
     if (tab === "notes") queueMicrotask(() => void loadNotes());
 
     focusSearch();
-  };
-
-  const loadSearchData = async () => {
-    setSearchQuery("");
   };
 
   const loadClipboardData = async () => {
@@ -267,6 +280,24 @@ function App() {
     if (showSettings()) return;
     if (activeTab() === "notes") return;
 
+    if (activeTab() === "search") {
+      const data = searchResults();
+      if (!data.length) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((i) => (i + 1) % data.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((i) => (i === 0 ? data.length - 1 : i - 1));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const item = data[Math.min(selectedIndex(), data.length - 1)];
+        if (item) await handleSearchItemClick(item);
+      }
+      return;
+    }
+
     if (activeTab() === "clipboard") {
       const data = filteredClipboardData();
       if (!data.length) return;
@@ -303,13 +334,55 @@ function App() {
     }
   });
 
+  createEffect(() => {
+    const data = searchResults();
+    const idx = selectedIndex();
+    if (!data.length && idx !== 0) {
+      setSelectedIndex(0);
+      return;
+    }
+    if (data.length && idx > data.length - 1) {
+      setSelectedIndex(data.length - 1);
+    }
+  });
+
+  createEffect(() => {
+    const term = searchQuery().trim();
+    const tab = activeTab();
+    const settingsOpen = showSettings();
+    const requestId = ++searchLoadId;
+
+    if (settingsOpen || tab !== "search") {
+      setSearchResults('No results found...');
+      return;
+    }
+
+    if (!term) {
+      setSearchResults('No results found...');
+      return;
+    }
+
+    const run = async () => {
+      try {
+        const results = await searchData(term);
+        if (requestId !== searchLoadId) return;
+        setSearchResults(results);
+      } catch (e) {
+        console.error("Search failed:", e);
+        if (requestId === searchLoadId) setSearchResults('No results found...');
+      }
+    };
+
+    void run();
+  });
+
   onMount(() => {
     document.addEventListener("keydown", handleKeyDown, true);
     void loadClipboardData();
 
-    const offHotkey = Events.On("Backend:GlobalHotkeyEvent", () =>
-      WindowShow()
-    );
+    // const offHotkey = Events.On("Backend:GlobalHotkeyEvent", () =>
+    //   WindowShow()
+    // );
     const offClipboard = Events.On("ClipboardUpdated", () => {
       if (activeTab() === "clipboard") void loadClipboardData();
     });
@@ -399,8 +472,9 @@ function App() {
               onClick={() => switchTab("search")}
               title="Search Ctrl+1"
             >
-              <IconApps />
+              <IconFind />
             </button>
+
             <button
               class={
                 "tab-btn" +
@@ -444,11 +518,12 @@ function App() {
             <Show when={showSettings()}>
               <SettingsView onClose={() => setShowSettings(false)} />
             </Show>
+
             <Show when={!showSettings() && activeTab() === "search"}>
               <SearchView
                 searchData={searchQuery()}
-                filteredSearchData={filteredSearchData()}
-                searchSelectedIndex={searchSelectedIndex()}
+                filteredSearchData={searchResults()}
+                searchSelectedIndex={selectedIndex()}
                 onItemClick={handleSearchItemClick}
               />
             </Show>

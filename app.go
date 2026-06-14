@@ -81,8 +81,13 @@ func (a *App) RegisterHotKey() {
 
 func (a *App) SearchString(query string) string {
 	ctx := context.Background()
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("Failed to detect home directory: %v\n", err)
+		return ""
+	}
 	finder := findm.New([]string{
-		"/Users/sinkisinha/Documents/Rishi/rilaunch",
+		homeDir,
 	})
 
 	if query == "" {
@@ -97,12 +102,16 @@ func (a *App) SearchString(query string) string {
 		MaxFileSize: 2 * 1024 * 1024,
 		Limit:       50,
 	})
-	fmt.Printf("Search results: %+v\n", results)
 	if err != nil {
-		return fmt.Sprintf("Search error: %v\n", err)
+		fmt.Println("Search error:", err)
 	}
 
-	return fmt.Sprintf("Search results: %+v\n", results)
+	jsonList, err := json.Marshal(results)
+	if err != nil {
+		fmt.Println("Marshal", err)
+		return "[]"
+	}
+	return string(jsonList)
 }
 
 func (a *App) GetClipData(name string) string {
