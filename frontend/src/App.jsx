@@ -71,9 +71,8 @@ function App() {
       const data = JSON.parse(result || "[]");
       let stringified = data.map((item) => {
         let preparedString = "";
-        preparedString += item.file ? `File:${item.file} \n` : "";
-        preparedString += item.line ? `Line:${item.line} \n` : "";
-        preparedString += item.content ? `Content:${item.content} \n` : "";
+        preparedString += item.file ? `**${item.file}: ${item.line}** \n` : "";
+        preparedString += item.content ? `${item.content} \n` : "";
         return `${preparedString} \n------------------------------------------\n`;
       });
       return stringified.join("\n");

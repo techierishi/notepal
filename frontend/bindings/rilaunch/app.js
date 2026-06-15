@@ -9,12 +9,15 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as application$0 from "../github.com/wailsapp/wails/v3/pkg/application/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as config$0 from "./pkg/config/models.js";
 
 /**
  * @returns {$CancellablePromise<string>}
  */
-export function ChooseNotesDir() {
-    return $Call.ByID(503047156);
+export function ChooseDir() {
+    return $Call.ByID(12415951);
 }
 
 /**
@@ -48,10 +51,12 @@ export function GetNotes() {
 }
 
 /**
- * @returns {$CancellablePromise<string>}
+ * @returns {$CancellablePromise<config$0.Settings>}
  */
-export function GetNotesDir() {
-    return $Call.ByID(1854086651);
+export function GetSettings() {
+    return $Call.ByID(2554697378).then(/** @type {($result: any) => any} */(($result) => {
+        return $$createType0($result);
+    }));
 }
 
 /**
@@ -74,6 +79,14 @@ export function RegisterHotKey() {
  */
 export function SaveNote(content) {
     return $Call.ByID(717593036, content);
+}
+
+/**
+ * @param {config$0.Settings | null} settings
+ * @returns {$CancellablePromise<boolean>}
+ */
+export function SaveSettings(settings) {
+    return $Call.ByID(1949631069, settings);
 }
 
 /**
@@ -137,3 +150,6 @@ export function WindowHide() {
 export function WindowShow() {
     return $Call.ByID(3381873996);
 }
+
+// Private type creation functions
+const $$createType0 = config$0.Settings.createFrom;

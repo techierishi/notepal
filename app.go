@@ -32,6 +32,7 @@ type App struct {
 	lastCommand  string
 	lastOutput   string
 	notesStore   *notes.NotesStore
+	settings     config.Settings
 	visible      bool
 	ready        bool
 }
@@ -67,6 +68,7 @@ func (a *App) startup(ctx context.Context) {
 	go clipm.Record(ctx)
 
 	settings := config.LoadSettings()
+	a.settings = *settings
 	a.notesStore = &notes.NotesStore{Dir: settings.NotesDir}
 	if err := a.notesStore.EnsureDir(); err != nil {
 		fmt.Printf("Failed to init notes dir: %v\n", err)
@@ -81,14 +83,7 @@ func (a *App) RegisterHotKey() {
 
 func (a *App) SearchString(query string) string {
 	ctx := context.Background()
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Printf("Failed to detect home directory: %v\n", err)
-		return ""
-	}
-	finder := findm.New([]string{
-		homeDir,
-	})
+	finder := findm.New(a.settings.SearchDirs)
 
 	if query == "" {
 		return ""
@@ -188,14 +183,10 @@ func (a *App) UpdateNote(id, content string) string {
 	return string(data)
 }
 
-func (a *App) GetNotesDir() string {
-	if a.notesStore == nil {
-		return ""
-	}
-	return a.notesStore.Dir
+func (a *App) GetSettings() config.Settings {
+	return a.settings
 }
-
-func (a *App) ChooseNotesDir() string {
+func (a *App) ChooseDir() string {
 	if a.notesStore == nil || a.wailsApp == nil {
 		return ""
 	}
@@ -208,13 +199,25 @@ func (a *App) ChooseNotesDir() string {
 	if err != nil || newDir == "" {
 		return ""
 	}
+	return newDir
+}
+func (a *App) SaveSettings(settings *config.Settings) bool {
+	if a.notesStore == nil || a.wailsApp == nil {
+		return false
+	}
 
-	settings := config.LoadSettings()
+	dialog := a.wailsApp.Dialog.OpenFile()
+	dialog.SetTitle("Select notes directory")
+	dialog.CanChooseDirectories(true)
+
+	newDir, err := dialog.PromptForSingleSelection()
+	if err != nil || newDir == "" {
+		return false
+	}
+
 	settings.NotesDir = newDir
 	config.SaveSettings(settings)
-	a.notesStore.Dir = newDir
-
-	return newDir
+	return true
 }
 
 func extractMacOSIconBase64(appPath string) string {

@@ -326,7 +326,6 @@ function NotesView(props) {
                 setEditContent(val);
               }}
               language="markdown"
-              prism={prism}
               style={{
                   height: "100%",
                   "min-height": "0",

@@ -120,7 +120,8 @@ func Touch(fileName string) error {
 
 // Settings holds user-configurable app preferences, persisted to settings.json.
 type Settings struct {
-	NotesDir string `json:"notesDir"`
+	NotesDir   string   `json:"notesDir"`
+	SearchDirs []string `json:"searchDirs"`
 }
 
 func settingsFilePath() string {
@@ -143,6 +144,13 @@ func LoadSettings() *Settings {
 	}
 	if s.NotesDir == "" {
 		s.NotesDir = filepath.Join(dir, "notes")
+	}
+	if len(s.SearchDirs) == 0 {
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			homeDir = dir
+		}
+		s.SearchDirs = []string{homeDir}
 	}
 	return s
 }
