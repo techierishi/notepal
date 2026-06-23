@@ -4,6 +4,7 @@ import { marked } from "marked";
 import { Editor } from "solid-prism-editor";
 import "solid-prism-editor/layout.css";
 import "solid-prism-editor/themes/github-light.css";
+import "solid-prism-editor/prism/languages/markdown";
 
 import prism from "prismjs";
 import "prismjs/components/prism-markdown";
