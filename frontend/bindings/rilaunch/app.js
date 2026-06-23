@@ -90,14 +90,6 @@ export function SaveSettings(settings) {
 }
 
 /**
- * @param {string} query
- * @returns {$CancellablePromise<string>}
- */
-export function SearchString(query) {
-    return $Call.ByID(1177071260, query);
-}
-
-/**
  * @param {application$0.App | null} app
  * @returns {$CancellablePromise<void>}
  */

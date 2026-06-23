@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 	"rilaunch/pkg/clipm"
 	"rilaunch/pkg/config"
-	"rilaunch/pkg/findm"
 	"rilaunch/pkg/notes"
 	goruntime "runtime"
 	"strings"
@@ -79,34 +78,6 @@ func (a *App) startup(ctx context.Context) {
 
 func (a *App) RegisterHotKey() {
 	go registerHotkey(a)
-}
-
-func (a *App) SearchString(query string) string {
-	ctx := context.Background()
-	finder := findm.New(a.settings.SearchDirs)
-
-	if query == "" {
-		return ""
-	}
-
-	results, err := finder.Search(ctx, findm.SearchOptions{
-		Query:       fmt.Sprintf("%s", query),
-		IgnoreCase:  true,
-		Extensions:  []string{"go", "md", "txt"},
-		ExcludeDirs: []string{".git", "node_modules", "vendor"},
-		MaxFileSize: 2 * 1024 * 1024,
-		Limit:       50,
-	})
-	if err != nil {
-		fmt.Println("Search error:", err)
-	}
-
-	jsonList, err := json.Marshal(results)
-	if err != nil {
-		fmt.Println("Marshal", err)
-		return "[]"
-	}
-	return string(jsonList)
 }
 
 func (a *App) GetClipData(name string) string {
@@ -270,7 +241,7 @@ func extractMacOSIconBase64(appPath string) string {
 
 func registerHotkey(a *App) {
 	hk := hotkey.New(
-		[]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModOption},
+		[]hotkey.Modifier{hotkey.ModCtrl, hotkey.Mod1},
 		hotkey.KeySpace,
 	)
 

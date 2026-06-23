@@ -1,24 +1,5 @@
 // ── Flat SVG icons ────────────────────────────────────────────────────────────
 
-const IconFind = () => (
-  <svg
-    width="15"
-    height="15"
-    viewBox="0 0 15 15"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="1.4"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-  >
-    <path d="M3 1.5H9.5L13.5 5.5V13.5C13.5 14.05 13.05 14.5 12.5 14.5H3C2.45 14.5 2 14.05 2 13.5V2.5C2 1.95 2.45 1.5 3 1.5Z" />
-    <path d="M9.5 1.5V5.5H13.5" />
-    
-    <circle cx="7" cy="9.5" r="1.8" />
-    <line x1="8.3" y1="10.8" x2="10.5" y2="13" />
-  </svg>
-);
-
 const IconClipboard = () => (
   <svg
     width="15"
@@ -197,7 +178,6 @@ const IconFolder = () => (
 );
 
 export {
-  IconFind,
   IconClipboard,
   IconTerminal,
   IconNotes,

@@ -122,4 +122,4 @@ Click ✕ on note
 
 ## Hotkey
 
-`Ctrl+Shift+Space` (registered via `golang.design/x/hotkey`) toggles window visibility globally. The Go side emits `Backend:GlobalHotkeyEvent` which the frontend listens to via `Events.On`.
+`Option+Command+Space` (registered via `golang.design/x/hotkey`) toggles window visibility globally. The Go side emits `Backend:GlobalHotkeyEvent` which the frontend listens to via `Events.On`.

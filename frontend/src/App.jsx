@@ -17,13 +17,11 @@ import {
   UpdateNote,
   WindowHide,
   WindowShow,
-  SearchString,
   Quit
 } from "../bindings/rilaunch/app";
 
 import SearchBar from "./components/SearchBar";
 import ClipboardView from "./components/ClipboardView";
-import SearchView from "./components/SearchView";
 import NotesView from "./components/NotesView";
 import SettingsView from "./components/SettingsView";
 import StatusBar from "./components/StatusBar";
@@ -32,18 +30,15 @@ import {
   IconNotes,
   IconSettings,
   IconRefresh,
-  IconTrash,
-  IconFind
+  IconTrash
 } from "./components/Icons";
 import "./App.css";
 
-const TABS = ["search", "clipboard", "notes"];
+const TABS = ["clipboard", "notes"];
 
 function App() {
-  const [activeTab, setActiveTab] = createSignal("search");
+  const [activeTab, setActiveTab] = createSignal("clipboard");
   const [searchQuery, setSearchQuery] = createSignal("");
-  const [selectedIndex, setSelectedIndex] = createSignal(0);
-  const [searchResults, setSearchResults] = createSignal([]);
   const [clipboardData, setClipboardData] = createSignal([]);
   const [clipboardSelectedIndex, setClipboardSelectedIndex] = createSignal(0);
   const [notesList, setNotesList] = createSignal([]);
@@ -56,46 +51,11 @@ function App() {
   let searchInputRef;
   let clipboardLoadId = 0;
   let notesLoadId = 0;
-  let searchLoadId = 0;
-
   const showStatus = (msg, type = "info") => {
     clearTimeout(statusTimer);
     setStatusMsg(msg);
     setStatusColor(type);
     statusTimer = setTimeout(() => setStatusMsg(""), 2500);
-  };
-
-  const searchData = async (term) => {
-    const result = await SearchString(term);
-    try {
-      const data = JSON.parse(result || "[]");
-      let stringified = data.map((item) => {
-        let preparedString = "";
-        preparedString += item.file ? `**${item.file}: ${item.line}** \n` : "";
-        preparedString += item.content ? `${item.content} \n` : "";
-        return `${preparedString} \n------------------------------------------\n`;
-      });
-      return stringified.join("\n");
-    } catch (e) {
-      return 'No results found...';
-    }
-  };
-
-  const handleSearchItemClick = async (item) => {
-    try {
-      const text =
-        typeof item === "string"
-          ? item
-          : item?.content || item?.text || item?.value || item?.label || "";
-
-      if (text) {
-        await navigator.clipboard.writeText(text);
-      }
-      WindowHide();
-    } catch (e) {
-      console.error("Failed to handle search item click:", e);
-      showStatus("Failed to use search item", "error");
-    }
   };
 
   const filteredClipboardData = createMemo(() => {
@@ -123,7 +83,7 @@ function App() {
       case "notes":
         return "Search notes...";
       default:
-        return "Search...";
+        return "Filter...";
     }
   };
 
@@ -139,7 +99,6 @@ function App() {
     if (!sameTab) {
       setActiveTab(tab);
       setSearchQuery("");
-      setSelectedIndex(0);
       setClipboardSelectedIndex(0);
     }
 
@@ -270,7 +229,7 @@ function App() {
       return;
     }
 
-    if ((e.metaKey || e.ctrlKey) && ["1", "2", "3"].includes(e.key)) {
+    if ((e.metaKey || e.ctrlKey) && ["1", "2"].includes(e.key)) {
       e.preventDefault();
       switchTab(TABS[parseInt(e.key, 10) - 1]);
       return;
@@ -278,24 +237,6 @@ function App() {
 
     if (showSettings()) return;
     if (activeTab() === "notes") return;
-
-    if (activeTab() === "search") {
-      const data = searchResults();
-      if (!data.length) return;
-
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((i) => (i + 1) % data.length);
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((i) => (i === 0 ? data.length - 1 : i - 1));
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        const item = data[Math.min(selectedIndex(), data.length - 1)];
-        if (item) await handleSearchItemClick(item);
-      }
-      return;
-    }
 
     if (activeTab() === "clipboard") {
       const data = filteredClipboardData();
@@ -317,7 +258,6 @@ function App() {
 
   createEffect(() => {
     searchQuery();
-    setSelectedIndex(0);
     setClipboardSelectedIndex(0);
   });
 
@@ -331,48 +271,6 @@ function App() {
     if (data.length && idx > data.length - 1) {
       setClipboardSelectedIndex(data.length - 1);
     }
-  });
-
-  createEffect(() => {
-    const data = searchResults();
-    const idx = selectedIndex();
-    if (!data.length && idx !== 0) {
-      setSelectedIndex(0);
-      return;
-    }
-    if (data.length && idx > data.length - 1) {
-      setSelectedIndex(data.length - 1);
-    }
-  });
-
-  createEffect(() => {
-    const term = searchQuery().trim();
-    const tab = activeTab();
-    const settingsOpen = showSettings();
-    const requestId = ++searchLoadId;
-
-    if (settingsOpen || tab !== "search") {
-      setSearchResults('No results found...');
-      return;
-    }
-
-    if (!term) {
-      setSearchResults('No results found...');
-      return;
-    }
-
-    const run = async () => {
-      try {
-        const results = await searchData(term);
-        if (requestId !== searchLoadId) return;
-        setSearchResults(results);
-      } catch (e) {
-        console.error("Search failed:", e);
-        if (requestId === searchLoadId) setSearchResults('No results found...');
-      }
-    };
-
-    void run();
   });
 
   onMount(() => {
@@ -399,7 +297,6 @@ function App() {
       document.removeEventListener("keydown", handleKeyDown, true);
       window.removeEventListener("launcher:show", onLauncherShow);
       clearTimeout(statusTimer);
-      offHotkey?.();
       offClipboard?.();
     });
   });
@@ -425,7 +322,6 @@ function App() {
               onClick={(e) => e.stopPropagation()}
             >
               <span class="plugin-menu-title">
-                {activeTab() === "search" && "Search"}
                 {activeTab() === "clipboard" && "Clipboard"}
                 {activeTab() === "notes" && "Notes"}
               </span>
@@ -466,23 +362,12 @@ function App() {
             <button
               class={
                 "tab-btn" +
-                (activeTab() === "search" && !showSettings() ? " active" : "")
-              }
-              onClick={() => switchTab("search")}
-              title="Search Ctrl+1"
-            >
-              <IconFind />
-            </button>
-
-            <button
-              class={
-                "tab-btn" +
                 (activeTab() === "clipboard" && !showSettings()
                   ? " active"
                   : "")
               }
               onClick={() => switchTab("clipboard")}
-              title="Clipboard Ctrl+2"
+              title="Clipboard Ctrl+1"
             >
               <IconClipboard />
             </button>
@@ -493,7 +378,7 @@ function App() {
                 (activeTab() === "notes" && !showSettings() ? " active" : "")
               }
               onClick={() => switchTab("notes")}
-              title="Notes Ctrl+3"
+              title="Notes Ctrl+2"
             >
               <IconNotes />
             </button>
@@ -516,15 +401,6 @@ function App() {
           <div class="content-panel">
             <Show when={showSettings()}>
               <SettingsView onClose={() => setShowSettings(false)} />
-            </Show>
-
-            <Show when={!showSettings() && activeTab() === "search"}>
-              <SearchView
-                searchData={searchQuery()}
-                filteredSearchData={searchResults()}
-                searchSelectedIndex={selectedIndex()}
-                onItemClick={handleSearchItemClick}
-              />
             </Show>
 
             <Show when={!showSettings() && activeTab() === "clipboard"}>

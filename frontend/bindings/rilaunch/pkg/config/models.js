@@ -22,14 +22,6 @@ export class Settings {
              */
             this["notesDir"] = "";
         }
-        if (!("searchDirs" in $$source)) {
-            /**
-             * @member
-             * @type {string[]}
-             */
-            this["searchDirs"] = [];
-        }
-
         Object.assign(this, $$source);
     }
 
@@ -39,14 +31,9 @@ export class Settings {
      * @returns {Settings}
      */
     static createFrom($$source = {}) {
-        const $$createField1_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        if ("searchDirs" in $$parsedSource) {
-            $$parsedSource["searchDirs"] = $$createField1_0($$parsedSource["searchDirs"]);
-        }
         return new Settings(/** @type {Partial<Settings>} */($$parsedSource));
     }
 }
 
 // Private type creation functions
-const $$createType0 = $Create.Array($Create.Any);
