@@ -3,7 +3,7 @@ import {
   GetSettings,
   SaveSettings,
   ChooseDir
-} from "../../bindings/rilaunch/app";
+} from "../../bindings/notepal/app";
 import "./SettingsView.css";
 
 function SettingsView(props) {

@@ -18,7 +18,7 @@ import {
   WindowHide,
   WindowShow,
   Quit
-} from "../bindings/rilaunch/app";
+} from "../bindings/notepal/app";
 
 import SearchBar from "./components/SearchBar";
 import ClipboardView from "./components/ClipboardView";

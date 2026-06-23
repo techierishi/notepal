@@ -9,9 +9,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"rilaunch/pkg/clipm"
-	"rilaunch/pkg/config"
-	"rilaunch/pkg/notes"
+	"notepal/pkg/clipm"
+	"notepal/pkg/config"
+	"notepal/pkg/notes"
 	goruntime "runtime"
 	"strings"
 	"time"
@@ -225,7 +225,7 @@ func extractMacOSIconBase64(appPath string) string {
 	}
 
 	hash := md5.Sum([]byte(appPath))
-	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("rilaunch_%x.png", hash))
+	tmpFile := filepath.Join(os.TempDir(), fmt.Sprintf("notepal_%x.png", hash))
 	if _, err := os.Stat(tmpFile); err != nil {
 		if err := exec.Command("sips", "-s", "format", "png", "-Z", "32", icnsPath, "--out", tmpFile).Run(); err != nil {
 			return ""

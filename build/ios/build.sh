@@ -2,8 +2,8 @@
 set -e
 
 # Build configuration
-APP_NAME="rilaunch"
-BUNDLE_ID="com.palapps.rilaunch"
+APP_NAME="notepal"
+BUNDLE_ID="com.palapps.notepal"
 VERSION="0.1.0"
 BUILD_NUMBER="0.1.0"
 BUILD_DIR="build/ios"

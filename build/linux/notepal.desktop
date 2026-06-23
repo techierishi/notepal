@@ -1,8 +1,8 @@
 [Desktop Entry]
 Type=Application
-Name=rilaunch
-Exec=rilaunch
-Icon=rilaunch
+Name=notepal
+Exec=notepal
+Icon=notepal
 Categories=Development;
 Terminal=false
 Keywords=wails

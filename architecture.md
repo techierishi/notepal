@@ -2,7 +2,7 @@
 
 ## Philosophy
 
-rilaunch is a **keyboard-first, plugin-based launcher** for macOS. The core idea: one hotkey (`Ctrl+Shift+Space`) summons a focused, frameless window where you can immediately start typing. No mouse needed.
+notepal is a **keyboard-first, plugin-based launcher** for macOS. The core idea: one hotkey (`Ctrl+Shift+Space`) summons a focused, frameless window where you can immediately start typing. No mouse needed.
 
 - **Minimal UI surface**: no title bar, no native chrome. The UI is pure HTML rendered inside a transparent Wails webview, with rounded corners and a subtle shadow.
 - **Instant**: the window shows instantly; data loads in the background on first paint.

@@ -3,26 +3,26 @@
 #
 # The lines below are called `modelines`. See `:help modeline`
 
-name: "rilaunch"
+name: "notepal"
 arch: ${GOARCH}
 platform: "linux"
 version: "0.1.0"
 section: "default"
 priority: "extra"
 maintainer: ${GIT_COMMITTER_NAME} <${GIT_COMMITTER_EMAIL}>
-description: "A rilaunch application"
+description: "A notepal application"
 vendor: "My Company"
 homepage: "https://wails.io"
 license: "MIT"
 release: "1"
 
 contents:
-  - src: "./bin/rilaunch"
-    dst: "/usr/local/bin/rilaunch"
+  - src: "./bin/notepal"
+    dst: "/usr/local/bin/notepal"
   - src: "./build/appicon.png"
-    dst: "/usr/share/icons/hicolor/128x128/apps/rilaunch.png"
-  - src: "./build/linux/rilaunch.desktop"
-    dst: "/usr/share/applications/rilaunch.desktop"
+    dst: "/usr/share/icons/hicolor/128x128/apps/notepal.png"
+  - src: "./build/linux/notepal.desktop"
+    dst: "/usr/share/applications/notepal.desktop"
 
 # Default dependencies for the GTK4 + WebKitGTK 6.0 stack (Ubuntu 24.04+ / Debian 13+)
 depends:

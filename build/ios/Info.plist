@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>rilaunch</string>
+    <string>notepal</string>
     <key>CFBundleIdentifier</key>
-    <string>com.example.rilaunch</string>
+    <string>com.example.notepal</string>
     <key>CFBundleName</key>
     <string>My Product</string>
     <key>CFBundleDisplayName</key>
