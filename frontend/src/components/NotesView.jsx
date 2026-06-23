@@ -86,7 +86,7 @@ function NotesView(props) {
     if (!content) return;
 
     if (activeNote()) {
-      await props.onUpdateNote?.(activeNote().id, content);
+      await props.onUpdate?.(activeNote().id, content);
     } else {
       await props.onSave(content);
     }

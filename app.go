@@ -176,18 +176,8 @@ func (a *App) SaveSettings(settings *config.Settings) bool {
 	if a.notesStore == nil || a.wailsApp == nil {
 		return false
 	}
-
-	dialog := a.wailsApp.Dialog.OpenFile()
-	dialog.SetTitle("Select notes directory")
-	dialog.CanChooseDirectories(true)
-
-	newDir, err := dialog.PromptForSingleSelection()
-	if err != nil || newDir == "" {
-		return false
-	}
-
-	settings.NotesDir = newDir
 	config.SaveSettings(settings)
+	a.notesStore.Dir = settings.NotesDir
 	return true
 }
 
@@ -239,16 +229,15 @@ func extractMacOSIconBase64(appPath string) string {
 	return "data:image/png;base64," + base64.StdEncoding.EncodeToString(data)
 }
 
-func registerHotkey(a *App) {
-	hk := hotkey.New(
-		[]hotkey.Modifier{hotkey.ModCtrl, hotkey.Mod1},
-		hotkey.KeySpace,
-	)
-
+func tryRegisterHotkey(mods []hotkey.Modifier, key hotkey.Key) *hotkey.Hotkey {
+	hk := hotkey.New(mods, key)
 	if err := hk.Register(); err != nil {
-		return
+		return nil
 	}
+	return hk
+}
 
+func listenHotkey(a *App, hk *hotkey.Hotkey) {
 	for {
 		select {
 		case <-hk.Keyup():
@@ -261,10 +250,31 @@ func registerHotkey(a *App) {
 	}
 }
 
+func registerHotkey(a *App) {
+	var hk *hotkey.Hotkey
+	var label string
+
+	switch goruntime.GOOS {
+	case "darwin":
+		hk = tryRegisterHotkey([]hotkey.Modifier{hotkey.ModCtrl, hotkey.Mod1}, hotkey.KeySpace)
+		label = "Ctrl+Command+Space"
+	default:
+		hk = tryRegisterHotkey([]hotkey.Modifier{hotkey.ModCtrl, hotkey.ModShift}, hotkey.KeySpace)
+		label = "Ctrl+Shift+Space"
+	}
+
+	if hk == nil {
+		fmt.Println("Hotkey registration failed. Ensure you're on X11 (not Wayland).")
+		return
+	}
+	fmt.Printf("Hotkey registered: %s\n", label)
+	listenHotkey(a, hk)
+}
+
 func (a *App) makeWindow() *application.WebviewWindow {
 	return a.wailsApp.Window.NewWithOptions(application.WebviewWindowOptions{
 		Name:  "main",
-		Title: "RiLaunch",
+		Title: "NotePal",
 		URL:   "/",
 
 		Width:  650,
@@ -302,8 +312,6 @@ func (a *App) WindowShow() {
 	a.visible = true
 
 	a.wailsApp.Event.Emit("launcher:show", nil)
-	a.mainWindow.Hide()
-	time.Sleep(10 * time.Millisecond)
 	a.mainWindow.Center()
 	a.mainWindow.Show()
 	a.mainWindow.Focus()

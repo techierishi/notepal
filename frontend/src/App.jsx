@@ -174,9 +174,9 @@ function App() {
     showStatus("Notes reloaded", "success");
   };
 
-  const handleSaveNote = async (content, tag) => {
+  const handleSaveNote = async (content) => {
     try {
-      await SaveNote(content, tag);
+      await SaveNote(content);
       await loadNotes();
       showStatus("Note saved", "success");
     } catch (e) {
@@ -196,9 +196,9 @@ function App() {
     }
   };
 
-  const handleUpdateNote = async (id, content, tag) => {
+  const handleUpdateNote = async (id, content) => {
     try {
-      await UpdateNote(id, content, tag);
+      await UpdateNote(id, content);
       await loadNotes();
       showStatus("Note updated", "success");
     } catch (e) {

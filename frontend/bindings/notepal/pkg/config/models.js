@@ -22,6 +22,7 @@ export class Settings {
              */
             this["notesDir"] = "";
         }
+
         Object.assign(this, $$source);
     }
 
@@ -35,5 +36,3 @@ export class Settings {
         return new Settings(/** @type {Partial<Settings>} */($$parsedSource));
     }
 }
-
-// Private type creation functions

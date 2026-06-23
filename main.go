@@ -15,7 +15,7 @@ func main() {
 	app := NewApp()
 
 	wailsApp := application.New(application.Options{
-		Name: "RiLaunch",
+		Name: "NotePal",
 		Services: []application.Service{
 			application.NewService(app),
 		},
@@ -27,8 +27,6 @@ func main() {
 	app.SetApplication(wailsApp)
 	mainWindow := app.makeWindow()
 	app.SetMainWindow(mainWindow)
-	app.WindowShow()
-	app.WindowHide()
 	app.ready = true
 	app.startup(context.Background())
 
