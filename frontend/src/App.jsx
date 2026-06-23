@@ -1,182 +1,122 @@
-import { createSignal, createEffect, createMemo, onMount, onCleanup, Show } from 'solid-js';
-import Fuse from 'fuse.js';
+import {
+  createSignal,
+  createEffect,
+  createMemo,
+  onMount,
+  onCleanup,
+  Show
+} from "solid-js";
+import { Events } from "@wailsio/runtime";
 import {
   GetClipData,
-  GetAllApps,
-  LaunchApp,
-  ExecuteCommand,
   GetNotes,
+  ToggleClipSecret,
+  ClearClipboard,
   SaveNote,
   DeleteNote,
   UpdateNote,
-  ToggleClipSecret,
-  ClearClipboard
-} from '../wailsjs/go/main/App';
-import { EventsOn, WindowHide, WindowShow, Quit } from '../wailsjs/runtime/runtime';
-import SearchBar from './components/SearchBar';
-import ClipboardView from './components/ClipboardView';
-import ApplicationView from './components/ApplicationView';
-import CommandExecutor from './components/CommandExecutor';
-import NotesView from './components/NotesView';
-import SettingsView from './components/SettingsView';
-import StatusBar from './components/StatusBar';
-import { IconApps, IconClipboard, IconTerminal, IconNotes, IconSettings, IconRefresh, IconTrash, IconClear, IconHistory, IconFolder, IconSettingsSmall } from './components/Icons';
-import './App.css';
+  WindowHide,
+  WindowShow,
+  Quit
+} from "../bindings/notepal/app";
 
-// ── Shell history helpers ─────────────────────────────────────────────────────
+import SearchBar from "./components/SearchBar";
+import ClipboardView from "./components/ClipboardView";
+import NotesView from "./components/NotesView";
+import SettingsView from "./components/SettingsView";
+import StatusBar from "./components/StatusBar";
+import {
+  IconClipboard,
+  IconNotes,
+  IconSettings,
+  IconRefresh,
+  IconTrash
+} from "./components/Icons";
+import "./App.css";
 
-const SHELL_HISTORY_KEY = 'rilaunch_shell_history';
-
-function loadShellHistory() {
-  try {
-    return JSON.parse(localStorage.getItem(SHELL_HISTORY_KEY) || '[]');
-  } catch {
-    return [];
-  }
-}
-
-function saveShellHistoryItem(cmd) {
-  const hist = loadShellHistory().filter(h => h !== cmd);
-  hist.unshift(cmd);
-  localStorage.setItem(SHELL_HISTORY_KEY, JSON.stringify(hist.slice(0, 50)));
-}
-
-
-// ── App ───────────────────────────────────────────────────────────────────────
+const TABS = ["clipboard", "notes"];
 
 function App() {
-  const TABS = ['apps', 'clipboard', 'notes', 'shell'];
-
-  const [activeTab, setActiveTab] = createSignal('apps');
-  const [searchQuery, setSearchQuery] = createSignal('');
-  const [selectedIndex, setSelectedIndex] = createSignal(0);
+  const [activeTab, setActiveTab] = createSignal("clipboard");
+  const [searchQuery, setSearchQuery] = createSignal("");
   const [clipboardData, setClipboardData] = createSignal([]);
   const [clipboardSelectedIndex, setClipboardSelectedIndex] = createSignal(0);
-  const [allApps, setAllApps] = createSignal([]);
-  const [commandOutput, setCommandOutput] = createSignal('');
-  const [isExecuting, setIsExecuting] = createSignal(false);
   const [notesList, setNotesList] = createSignal([]);
-  const [shellHistory, setShellHistory] = createSignal(loadShellHistory());
-  const [shellHistoryIndex, setShellHistoryIndex] = createSignal(-1);
   const [showSettings, setShowSettings] = createSignal(false);
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
-  const [statusMsg, setStatusMsg] = createSignal('');
-  const [statusColor, setStatusColor] = createSignal('info');
+  const [statusMsg, setStatusMsg] = createSignal("");
+  const [statusColor, setStatusColor] = createSignal("info");
 
   let statusTimer;
   let searchInputRef;
   let clipboardLoadId = 0;
   let notesLoadId = 0;
-
-  const showStatus = (msg, type = 'info') => {
+  const showStatus = (msg, type = "info") => {
     clearTimeout(statusTimer);
     setStatusMsg(msg);
     setStatusColor(type);
-    statusTimer = setTimeout(() => setStatusMsg(''), 2500);
+    statusTimer = setTimeout(() => setStatusMsg(""), 2500);
   };
 
-  // ── Fuse index (rebuilt only when allApps changes) ────────────────────────
-  const fuseIndex = createMemo(() =>
-    new Fuse(allApps(), {
-      keys: ['title', 'subtitle', 'category'],
-      threshold: 0.4,
-      ignoreLocation: true,
-    })
-  );
-
-  // ── Per-tab filtered data (memos) ─────────────────────────────────────────
-  const filteredApps = createMemo(() => {
-    const q = searchQuery().trim();
-    if (!q) return allApps();
-    return fuseIndex().search(q).map(r => r.item);
-  });
-
   const filteredClipboardData = createMemo(() => {
-    const term = searchQuery().toLowerCase();
+    const term = searchQuery().trim().toLowerCase();
     if (!term) return clipboardData();
-    return clipboardData().filter(item =>
-      (item.content || item.text || '').toLowerCase().includes(term)
+    return clipboardData().filter((item) =>
+      (item.content || item.text || "").toLowerCase().includes(term)
     );
   });
 
   const filteredNotes = createMemo(() => {
-    const term = searchQuery().toLowerCase();
+    const term = searchQuery().trim().toLowerCase();
     if (!term) return notesList();
-    return notesList().filter(n =>
-      n.content.toLowerCase().includes(term) || n.tag.toLowerCase().includes(term)
-    );
+    return notesList().filter((n) => {
+      const content = (n.content || "").toLowerCase();
+      const tag = (n.tag || "").toLowerCase();
+      return content.includes(term) || tag.includes(term);
+    });
   });
 
-  const shellSuggestion = createMemo(() => {
-    if (activeTab() !== 'shell') return '';
-    const q = searchQuery().trim();
-    if (!q) return '';
-    return shellHistory().find(h => h.toLowerCase().startsWith(q.toLowerCase())) || '';
-  });
-
-  // ── Search bar config per tab ─────────────────────────────────────────────
   const searchPlaceholder = () => {
     switch (activeTab()) {
-      case 'apps': return 'Search applications...';
-      case 'clipboard': return 'Filter clipboard...';
-      case 'shell': return 'Enter shell command...';
-      case 'notes': return 'Search notes...';
-      default: return 'Search...';
+      case "clipboard":
+        return "Filter clipboard...";
+      case "notes":
+        return "Search notes...";
+      default:
+        return "Filter...";
     }
   };
 
-  // ── Tab switching ─────────────────────────────────────────────────────────
+  const focusSearch = () => {
+    setTimeout(() => searchInputRef?.focus?.(), 30);
+  };
+
   const switchTab = (tab) => {
     const sameTab = activeTab() === tab;
-
     setShowSettings(false);
     setIsMenuOpen(false);
 
     if (!sameTab) {
       setActiveTab(tab);
-      setSearchQuery('');
-      setSelectedIndex(0);
+      setSearchQuery("");
       setClipboardSelectedIndex(0);
-      setShellHistoryIndex(-1);
     }
 
-    if (tab === 'clipboard') queueMicrotask(() => void loadClipboardData());
-    if (tab === 'notes') queueMicrotask(() => void loadNotes());
+    if (tab === "clipboard") queueMicrotask(() => void loadClipboardData());
+    if (tab === "notes") queueMicrotask(() => void loadNotes());
 
-    setTimeout(() => {
-      searchInputRef?.focus();
-    }, 30);
+    focusSearch();
   };
 
-  // ── Data loaders ──────────────────────────────────────────────────────────
   const loadClipboardData = async () => {
     const requestId = ++clipboardLoadId;
     try {
-      const raw = await GetClipData('');
+      const raw = await GetClipData("");
       if (requestId !== clipboardLoadId) return;
-      setClipboardData(JSON.parse(raw || '[]'));
+      setClipboardData(JSON.parse(raw || "[]"));
     } catch (e) {
-      console.error('Failed to load clipboard:', e);
-    }
-  };
-
-  const loadAllApps = async () => {
-    try {
-      const raw = await GetAllApps();
-      const parsed = JSON.parse(raw || '[]');
-      const mapped = parsed.map(app => ({
-        id: app.id,
-        title: app.displayName || app.name,
-        subtitle: app.description || 'Application',
-        icon: app.icon || '',
-        category: app.category || 'App',
-        appData: app,
-      }));
-      setAllApps(mapped);
-      if (mapped.length === 0) setTimeout(loadAllApps, 1500);
-    } catch (e) {
-      console.error(e);
-      setTimeout(loadAllApps, 2000);
+      console.error("Failed to load clipboard:", e);
+      if (requestId === clipboardLoadId) setClipboardData([]);
     }
   };
 
@@ -185,80 +125,63 @@ function App() {
     try {
       const raw = await GetNotes();
       if (requestId !== notesLoadId) return;
-      setNotesList(JSON.parse(raw || '[]'));
+      setNotesList(JSON.parse(raw || "[]"));
     } catch (e) {
-      console.error('Failed to load notes:', e);
+      console.error("Failed to load notes:", e);
+      if (requestId === notesLoadId) setNotesList([]);
     }
   };
 
-  // ── Actions ───────────────────────────────────────────────────────────────
-  const handleAppLaunch = async (command) => {
-    if (command?.appData) {
-      try {
-        await LaunchApp(command.appData.id);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  };
-
-  const handleCommandExecute = async (cmd) => {
-    setIsExecuting(true);
+  const handleClipboardItemClick = async (item) => {
     try {
-      const output = await ExecuteCommand(cmd);
-      setCommandOutput(output);
+      await navigator.clipboard.writeText(item.content || item.text || "");
+      WindowHide();
     } catch (e) {
-      setCommandOutput('Error: ' + e.message);
-    } finally {
-      setIsExecuting(false);
+      console.error("Failed to copy clipboard item:", e);
+      showStatus("Failed to copy item", "error");
     }
-  };
-
-  const handleClipboardItemClick = (item) => {
-    navigator.clipboard.writeText(item.content || item.text || '');
-    WindowHide();
   };
 
   const handleToggleSecret = async (item) => {
     try {
       await ToggleClipSecret(item.hash);
-      setClipboardData(prev => prev.map(x => x.hash === item.hash ? { ...x, is_secret: !x.is_secret } : x));
+      setClipboardData((prev) =>
+        prev.map((x) =>
+          x.hash === item.hash ? { ...x, is_secret: !x.is_secret } : x
+        )
+      );
     } catch (e) {
-      console.error('Failed to toggle secret:', e);
+      console.error("Failed to toggle secret:", e);
+      showStatus("Failed to update item", "error");
     }
   };
 
   const handleClearClipboard = async () => {
-    if (confirm('Are you sure you want to clear all clipboard items?')) {
-      try {
-        await ClearClipboard();
-        setClipboardData([]);
-        showStatus('Clipboard cleared', 'success');
-      } catch (e) {
-        console.error(e);
-        showStatus('Failed to clear clipboard', 'error');
-      }
+    if (!confirm("Are you sure you want to clear all clipboard items?")) return;
+    try {
+      await ClearClipboard();
+      setClipboardData([]);
+      setClipboardSelectedIndex(0);
+      showStatus("Clipboard cleared", "success");
+    } catch (e) {
+      console.error(e);
+      showStatus("Failed to clear clipboard", "error");
     }
   };
 
-  const handleClearConsole = () => {
-    setCommandOutput('');
-    showStatus('Console cleared', 'success');
-  };
-
   const handleReloadNotes = async () => {
-    void loadNotes();
-    showStatus('Notes reloaded', 'success');
+    await loadNotes();
+    showStatus("Notes reloaded", "success");
   };
 
-  const handleSaveNote = async (content, tag) => {
+  const handleSaveNote = async (content) => {
     try {
-      await SaveNote(content, tag);
+      await SaveNote(content);
       await loadNotes();
-      showStatus('Note saved', 'success');
+      showStatus("Note saved", "success");
     } catch (e) {
       console.error(e);
-      showStatus('Failed to save', 'error');
+      showStatus("Failed to save", "error");
     }
   };
 
@@ -266,160 +189,118 @@ function App() {
     try {
       await DeleteNote(id);
       await loadNotes();
-      showStatus('Note deleted');
+      showStatus("Note deleted", "success");
     } catch (e) {
       console.error(e);
+      showStatus("Failed to delete", "error");
     }
   };
 
-  const handleUpdateNote = async (id, content, tag) => {
+  const handleUpdateNote = async (id, content) => {
     try {
-      await UpdateNote(id, content, tag);
+      await UpdateNote(id, content);
       await loadNotes();
-      showStatus('Note updated', 'success');
+      showStatus("Note updated", "success");
     } catch (e) {
       console.error(e);
-      showStatus('Failed to update', 'error');
+      showStatus("Failed to update", "error");
     }
   };
 
-  // ── Keyboard handler ──────────────────────────────────────────────────────
   const handleKeyDown = async (e) => {
-    // Escape: clear query or quit
-    if (e.key === 'Escape') {
-      if (searchQuery() !== '') {
-        setSearchQuery('');
-        setShellHistoryIndex(-1);
+    if (e.key === "Escape") {
+      if (searchQuery() !== "") {
+        setSearchQuery("");
         return;
       }
       Quit();
       return;
     }
 
-    // Ctrl+Tab / Ctrl+Shift+Tab: cycle tabs
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Tab') {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Tab") {
       e.preventDefault();
       e.stopPropagation();
-
       const cur = TABS.indexOf(activeTab());
+      const safeCur = cur >= 0 ? cur : 0;
       const next = e.shiftKey
-        ? (cur - 1 + TABS.length) % TABS.length
-        : (cur + 1) % TABS.length;
-
+        ? (safeCur - 1 + TABS.length) % TABS.length
+        : (safeCur + 1) % TABS.length;
       switchTab(TABS[next]);
       return;
     }
 
-    // Ctrl/Cmd + 1..4: direct switch
-    if ((e.metaKey || e.ctrlKey) && ['1', '2', '3', '4'].includes(e.key)) {
+    if ((e.metaKey || e.ctrlKey) && ["1", "2"].includes(e.key)) {
       e.preventDefault();
       switchTab(TABS[parseInt(e.key, 10) - 1]);
       return;
     }
 
-    // Shell tab: Enter executes, ↑↓ navigates history
-    if (activeTab() === 'shell') {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const cmd = searchQuery().trim();
-        if (!cmd || isExecuting()) return;
-        saveShellHistoryItem(cmd);
-        setShellHistory(loadShellHistory());
-        setShellHistoryIndex(-1);
-        setSearchQuery('');
-        void handleCommandExecute(cmd);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        const hist = shellHistory();
-        if (!hist.length) return;
-        const next = Math.min(shellHistoryIndex() + 1, hist.length - 1);
-        setShellHistoryIndex(next);
-        setSearchQuery(hist[next]);
-      } else if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        const next = shellHistoryIndex() - 1;
-        if (next < 0) {
-          setShellHistoryIndex(-1);
-          setSearchQuery('');
-          return;
-        }
-        setShellHistoryIndex(next);
-        setSearchQuery(shellHistory()[next]);
-      } else if (e.key === 'ArrowRight') {
-        const sug = shellSuggestion();
-        if (
-          sug &&
-          searchInputRef &&
-          searchInputRef.selectionEnd === (searchInputRef.value || '').length
-        ) {
-          e.preventDefault();
-          setSearchQuery(sug);
-          setShellHistoryIndex(-1);
-        }
-      }
-      return;
-    }
+    if (showSettings()) return;
+    if (activeTab() === "notes") return;
 
-    // Notes tab: no keyboard nav
-    if (activeTab() === 'notes') return;
-
-    // Clipboard tab
-    if (activeTab() === 'clipboard') {
+    if (activeTab() === "clipboard") {
       const data = filteredClipboardData();
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setClipboardSelectedIndex(i => (i + 1) % Math.max(data.length, 1));
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setClipboardSelectedIndex(i => i === 0 ? data.length - 1 : i - 1);
-      } else if (e.key === 'Enter') {
-        e.preventDefault();
-        const item = data[clipboardSelectedIndex()];
-        if (item) {
-          navigator.clipboard.writeText(item.content || item.text || '');
-          WindowHide();
-        }
-      }
-      return;
-    }
+      if (!data.length) return;
 
-    // Apps tab: ↑↓ navigate, Enter launch
-    const filtered = filteredApps();
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      setSelectedIndex(i => (i + 1) % Math.max(filtered.length, 1));
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      setSelectedIndex(i => i === 0 ? filtered.length - 1 : i - 1);
-    } else if (e.key === 'Enter') {
-      e.preventDefault();
-      await handleAppLaunch(filtered[selectedIndex()]);
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setClipboardSelectedIndex((i) => (i + 1) % data.length);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setClipboardSelectedIndex((i) => (i === 0 ? data.length - 1 : i - 1));
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const item = data[Math.min(clipboardSelectedIndex(), data.length - 1)];
+        if (item) await handleClipboardItemClick(item);
+      }
     }
   };
 
-  // ── Effects ───────────────────────────────────────────────────────────────
   createEffect(() => {
     searchQuery();
-    setSelectedIndex(0);
     setClipboardSelectedIndex(0);
   });
 
+  createEffect(() => {
+    const data = filteredClipboardData();
+    const idx = clipboardSelectedIndex();
+    if (!data.length && idx !== 0) {
+      setClipboardSelectedIndex(0);
+      return;
+    }
+    if (data.length && idx > data.length - 1) {
+      setClipboardSelectedIndex(data.length - 1);
+    }
+  });
+
   onMount(() => {
-    document.addEventListener('keydown', handleKeyDown, true);
-    EventsOn('Backend:GlobalHotkeyEvent', () => WindowShow());
-    EventsOn('ClipboardUpdated', () => {
-      if (activeTab() === 'clipboard') void loadClipboardData();
+    document.addEventListener("keydown", handleKeyDown, true);
+    void loadClipboardData();
+
+    // const offHotkey = Events.On("Backend:GlobalHotkeyEvent", () =>
+    //   WindowShow()
+    // );
+    const offClipboard = Events.On("ClipboardUpdated", () => {
+      if (activeTab() === "clipboard") void loadClipboardData();
     });
-    void loadAllApps();
-    searchInputRef?.focus();
+    const onLauncherShow = () => {
+      requestAnimationFrame(() => {
+        document.body.classList.add("visible");
+        searchInputRef?.focus?.();
+      });
+    };
+
+    window.addEventListener("launcher:show", onLauncherShow);
+    searchInputRef?.focus?.();
+
+    onCleanup(() => {
+      document.removeEventListener("keydown", handleKeyDown, true);
+      window.removeEventListener("launcher:show", onLauncherShow);
+      clearTimeout(statusTimer);
+      offClipboard?.();
+    });
   });
 
-  onCleanup(() => {
-    document.removeEventListener('keydown', handleKeyDown, true);
-    clearTimeout(statusTimer);
-  });
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div class="app" onClick={() => setIsMenuOpen(false)}>
       <div class="main-container">
@@ -429,61 +310,46 @@ function App() {
             value={searchQuery()}
             onInput={setSearchQuery}
             placeholder={searchPlaceholder()}
-            isShellMode={activeTab() === 'shell'}
-            suggestion={shellSuggestion()}
             onMenuClick={(e) => {
               e.stopPropagation();
-              setIsMenuOpen(o => !o);
+              setIsMenuOpen((o) => !o);
             }}
           />
 
           <Show when={isMenuOpen() && !showSettings()}>
-            <div class="plugin-menu-panel floating-menu" onClick={(e) => e.stopPropagation()}>
+            <div
+              class="plugin-menu-panel floating-menu"
+              onClick={(e) => e.stopPropagation()}
+            >
               <span class="plugin-menu-title">
-                {activeTab() === 'apps' && 'Apps'}
-                {activeTab() === 'clipboard' && 'Clipboard'}
-                {activeTab() === 'shell' && 'Terminal'}
-                {activeTab() === 'notes' && 'Notes'}
+                {activeTab() === "clipboard" && "Clipboard"}
+                {activeTab() === "notes" && "Notes"}
               </span>
 
               <div class="menu-list">
-                <Show when={activeTab() === 'apps'}>
-                  <button class="menu-item" onClick={() => { setIsMenuOpen(false); void loadAllApps(); }}>
-                    <IconRefresh />
-                    <span>Refresh Apps</span>
-                  </button>
-                  <button class="menu-item disabled">
-                    <IconSettingsSmall />
-                    <span>App Settings</span>
-                  </button>
-                </Show>
-
-                <Show when={activeTab() === 'clipboard'}>
-                  <button class="menu-item danger" onClick={() => { setIsMenuOpen(false); void handleClearClipboard(); }}>
+                <Show when={activeTab() === "clipboard"}>
+                  <button
+                    class="menu-item danger"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      void handleClearClipboard();
+                    }}
+                  >
                     <IconTrash />
                     <span>Clear All</span>
                   </button>
                 </Show>
 
-                <Show when={activeTab() === 'shell'}>
-                  <button class="menu-item" onClick={() => { setIsMenuOpen(false); handleClearConsole(); }}>
-                    <IconClear />
-                    <span>Clear Console</span>
-                  </button>
-                  <button class="menu-item disabled">
-                    <IconHistory />
-                    <span>History Limit</span>
-                  </button>
-                </Show>
-
-                <Show when={activeTab() === 'notes'}>
-                  <button class="menu-item" onClick={() => { setIsMenuOpen(false); void handleReloadNotes(); }}>
+                <Show when={activeTab() === "notes"}>
+                  <button
+                    class="menu-item"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      void handleReloadNotes();
+                    }}
+                  >
                     <IconRefresh />
                     <span>Reload Notes</span>
-                  </button>
-                  <button class="menu-item disabled">
-                    <IconFolder />
-                    <span>Change Folder</span>
                   </button>
                 </Show>
               </div>
@@ -494,45 +360,37 @@ function App() {
         <div class="body-section">
           <div class="sidebar">
             <button
-              class={"tab-btn" + (activeTab() === 'apps' && !showSettings() ? ' active' : '')}
-              onClick={() => switchTab('apps')}
-              title="Applications Ctrl+1"
-            >
-              <IconApps />
-            </button>
-
-            <button
-              class={"tab-btn" + (activeTab() === 'clipboard' && !showSettings() ? ' active' : '')}
-              onClick={() => switchTab('clipboard')}
-              title="Clipboard Ctrl+2"
+              class={
+                "tab-btn" +
+                (activeTab() === "clipboard" && !showSettings()
+                  ? " active"
+                  : "")
+              }
+              onClick={() => switchTab("clipboard")}
+              title="Clipboard Ctrl+1"
             >
               <IconClipboard />
             </button>
 
             <button
-              class={"tab-btn" + (activeTab() === 'notes' && !showSettings() ? ' active' : '')}
-              onClick={() => switchTab('notes')}
-              title="Notes Ctrl+3"
+              class={
+                "tab-btn" +
+                (activeTab() === "notes" && !showSettings() ? " active" : "")
+              }
+              onClick={() => switchTab("notes")}
+              title="Notes Ctrl+2"
             >
               <IconNotes />
-            </button>
-
-            <button
-              class={"tab-btn" + (activeTab() === 'shell' && !showSettings() ? ' active' : '')}
-              onClick={() => switchTab('shell')}
-              title="Shell Ctrl+4"
-            >
-              <IconTerminal />
             </button>
 
             <div class="sidebar-spacer" />
 
             <button
-              class={"tab-btn settings-btn" + (showSettings() ? ' active' : '')}
+              class={"tab-btn settings-btn" + (showSettings() ? " active" : "")}
               onClick={() => {
                 setIsMenuOpen(false);
-                setShowSettings(s => !s);
-                setTimeout(() => searchInputRef?.focus(), 30);
+                setShowSettings((s) => !s);
+                focusSearch();
               }}
               title="Settings"
             >
@@ -545,16 +403,7 @@ function App() {
               <SettingsView onClose={() => setShowSettings(false)} />
             </Show>
 
-            <Show when={!showSettings() && activeTab() === 'apps'}>
-              <ApplicationView
-                apps={filteredApps()}
-                selectedIndex={selectedIndex()}
-                onSelect={setSelectedIndex}
-                onLaunch={handleAppLaunch}
-              />
-            </Show>
-
-            <Show when={!showSettings() && activeTab() === 'clipboard'}>
+            <Show when={!showSettings() && activeTab() === "clipboard"}>
               <ClipboardView
                 clipboardData={clipboardData()}
                 filteredClipboardData={filteredClipboardData()}
@@ -564,14 +413,7 @@ function App() {
               />
             </Show>
 
-            <Show when={!showSettings() && activeTab() === 'shell'}>
-              <CommandExecutor
-                output={commandOutput()}
-                isLoading={isExecuting()}
-              />
-            </Show>
-
-            <Show when={!showSettings() && activeTab() === 'notes'}>
+            <Show when={!showSettings() && activeTab() === "notes"}>
               <NotesView
                 notes={filteredNotes()}
                 onSave={handleSaveNote}
@@ -584,7 +426,7 @@ function App() {
         </div>
 
         <StatusBar
-          activeTab={showSettings() ? 'settings' : activeTab()}
+          activeTab={showSettings() ? "settings" : activeTab()}
           statusMsg={statusMsg()}
           statusColor={statusColor()}
         />

@@ -3,7 +3,7 @@ package clipm
 import (
 	"encoding/json"
 	"fmt"
-	"rilaunch/pkg/config"
+	"notepal/pkg/config"
 	"sort"
 
 	"github.com/rs/zerolog"

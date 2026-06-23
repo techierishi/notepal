@@ -1,18 +1,21 @@
 import { createSignal, createMemo, For, Show } from "solid-js";
-import { UpdateNote } from "../../wailsjs/go/main/App";
 import "./NotesView.css";
 import { marked } from "marked";
+import { Editor } from "solid-prism-editor";
+import "solid-prism-editor/layout.css";
+import "solid-prism-editor/themes/github-light.css";
+import "solid-prism-editor/prism/languages/markdown";
 
-// ── Markdown setup ─────────────────────────────────────────────────────────────
-// Code blocks render as plain pre/code (no syntax highlighting) to stay light.
+import prism from "prismjs";
+import "prismjs/components/prism-markdown";
+import "prismjs/components/prism-css";
+
 marked.use({
   renderer: {
-    code({ text = "" } = {}) {
-      const esc = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-      return `<pre class="md-code"><code>${esc}</code></pre>`;
+    code({ text = "", lang = "markup" } = {}) {
+      const grammar = prism.languages[lang] || prism.languages.markup;
+      const highlighted = prism.highlight(text, grammar, lang);
+      return `<pre class="md-code language-${lang}"><code class="language-${lang}">${highlighted}</code></pre>`;
     },
     codespan({ text = "" } = {}) {
       const esc = (typeof text === "string" ? text : String(text))
@@ -45,19 +48,16 @@ function fmtDate(iso) {
   }
 }
 
-// ── NotesView ──────────────────────────────────────────────────────────────────
 function NotesView(props) {
-  // view: 'list' | 'preview' | 'edit'
   const [view, setView] = createSignal("edit");
   const [activeNote, setActiveNote] = createSignal(null);
   const [editContent, setEditContent] = createSignal("");
-  let textareaRef;
+  const [editorSeed, setEditorSeed] = createSignal(0);
 
-  const visibleNotes = createMemo(() => {
-    return props.notes;
-  });
+  const visibleNotes = createMemo(() => props.notes || []);
 
-  // ── navigation helpers ──────────────────────────────────────────────────────
+  const remountEditor = () => setEditorSeed((n) => n + 1);
+
   const openPreview = (note) => {
     setActiveNote(note);
     setView("preview");
@@ -67,7 +67,6 @@ function NotesView(props) {
     setActiveNote(note || null);
     setEditContent(note?.content || "");
     setView("edit");
-    setTimeout(() => textareaRef?.focus(), 30);
   };
 
   const goBack = () => {
@@ -76,45 +75,53 @@ function NotesView(props) {
       setActiveNote(null);
       return;
     }
+
     if (view() === "edit") {
       setView(activeNote() ? "preview" : "list");
       return;
     }
   };
 
-  // ── actions ─────────────────────────────────────────────────────────────────
   const handleSave = async () => {
     const content = editContent().trim();
     if (!content) return;
+
     if (activeNote()) {
-      await UpdateNote(activeNote().id, content);
+      await props.onUpdate?.(activeNote().id, content);
     } else {
       await props.onSave(content);
     }
-    await props.onReload();
+
+    await props.onReload?.();
     setView("list");
     setActiveNote(null);
+    setEditContent("");
   };
 
   const handleDelete = async (id) => {
     await props.onDelete(id);
-    await props.onReload();
+    await props.onReload?.();
     setView("list");
     setActiveNote(null);
+    setEditContent("");
   };
 
-  const handleTextareaKey = (e) => {
+  const handleEditorKey = (e) => {
+    if (!e) return;
+
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
       handleSave();
     }
-    if (e.key === "Escape") goBack();
+
+    if (e.key === "Escape") {
+      e.preventDefault();
+      goBack();
+    }
   };
 
-  // ── render ──────────────────────────────────────────────────────────────────
   return (
     <div class="notes-view">
-      {/* ── LIST ─────────────────────────────────────────────────────────── */}
       <Show when={view() === "list"}>
         <div class="notes-list">
           <Show when={visibleNotes().length === 0}>
@@ -137,6 +144,7 @@ function NotesView(props) {
               <div class="notes-empty-sub">Click + to create one</div>
             </div>
           </Show>
+
           <For each={visibleNotes()}>
             {(note) => {
               const preview =
@@ -145,11 +153,12 @@ function NotesView(props) {
                 .replace(/^#+\s*/, "")
                 .replace(/[*_`]/g, "")
                 .slice(0, 72);
-              const fileId = note.id.split("_").join(" ");
+              const fileId = (note.id || "").split("_").join(" ");
+
               return (
                 <div class="note-row" onClick={() => openPreview(note)}>
-                  <div class="note-row-fileid">{` ${fileId}` || "(empty)"}</div>
-                  <div class="note-row-preview">{` ${clean}` || "(empty)"}</div>
+                  <div class="note-row-fileid">{fileId || "(empty)"}</div>
+                  <div class="note-row-preview">{clean || "(empty)"}</div>
                   <div class="note-row-top">
                     <span class="note-row-date">{fmtDate(note.createdAt)}</span>
                     <button
@@ -201,7 +210,6 @@ function NotesView(props) {
         </button>
       </Show>
 
-      {/* ── PREVIEW ──────────────────────────────────────────────────────── */}
       <Show when={view() === "preview"}>
         <div class="notes-panel">
           <div class="notes-panel-bar">
@@ -220,11 +228,13 @@ function NotesView(props) {
               </svg>
               Back
             </button>
+
             <div class="note-panel-meta">
               <span class="note-row-date">
                 {fmtDate(activeNote()?.updatedAt || activeNote()?.createdAt)}
               </span>
             </div>
+
             <div class="note-panel-actions">
               <button
                 class="note-action-btn"
@@ -244,6 +254,7 @@ function NotesView(props) {
                 </svg>
                 Edit
               </button>
+
               <button
                 class="note-action-btn danger"
                 onClick={() => handleDelete(activeNote().id)}
@@ -265,6 +276,7 @@ function NotesView(props) {
               </button>
             </div>
           </div>
+
           <div class="notes-preview-body">
             <div
               class="md-body"
@@ -274,7 +286,6 @@ function NotesView(props) {
         </div>
       </Show>
 
-      {/* ── EDIT ─────────────────────────────────────────────────────────── */}
       <Show when={view() === "edit"}>
         <div class="notes-panel">
           <div class="notes-panel-bar">
@@ -293,6 +304,7 @@ function NotesView(props) {
               </svg>
               List
             </button>
+
             <div class="note-panel-actions" style="margin-left:auto">
               <button
                 class="notes-save-btn"
@@ -304,14 +316,26 @@ function NotesView(props) {
             </div>
           </div>
 
-          <textarea
-            ref={textareaRef}
-            class="notes-textarea"
-            placeholder="Write in markdown…"
-            value={editContent()}
-            onInput={(e) => setEditContent(e.target.value)}
-            onKeyDown={handleTextareaKey}
-          />
+          <div
+            onKeyDown={handleEditorKey}
+            class="note-editor-container"
+            style={{ height: "100%", overflowY: "auto" }}
+          >
+            <Editor
+              value={activeNote()?.content || ""}
+              onUpdate={(val) => {
+                setEditContent(val);
+              }}
+              language="markdown"
+              style={{
+                  height: "100%",
+                  "min-height": "0",
+                  "max-height": "100%",
+                  overflow: "auto"
+                }}
+              placeholder="Write in markdown…"
+            />
+          </div>
         </div>
       </Show>
     </div>

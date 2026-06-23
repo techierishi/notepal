@@ -2,7 +2,7 @@
 
 ## Philosophy
 
-rilaunch is a **keyboard-first, plugin-based launcher** for macOS. The core idea: one hotkey (`Ctrl+Shift+Space`) summons a focused, frameless window where you can immediately start typing. No mouse needed.
+notepal is a **keyboard-first, plugin-based launcher** for macOS. The core idea: one hotkey (`Ctrl+Shift+Space`) summons a focused, frameless window where you can immediately start typing. No mouse needed.
 
 - **Minimal UI surface**: no title bar, no native chrome. The UI is pure HTML rendered inside a transparent Wails webview, with rounded corners and a subtle shadow.
 - **Instant**: the window shows instantly; data loads in the background on first paint.
@@ -32,15 +32,12 @@ rilaunch is a **keyboard-first, plugin-based launcher** for macOS. The core idea
                │  Wails JS bridge (wailsjs/)
 ┌──────────────▼──────────────────────────────┐
 │ Go backend (app.go)                         │
-│  Exposes methods: GetAllApps, LaunchApp,    │
-│  GetClipData, ExecuteCommand,               │
-│  GetNotes / SaveNote / DeleteNote,          │
-│  GetAppIcon                                 │
+│  GetClipData,                               │
+│  GetNotes / SaveNote / DeleteNote           │
 └──────────────┬──────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────┐
 │ pkg/ — domain packages                      │
-│  appm/   — app discovery & launching        │
 │  clipm/  — clipboard daemon + bbolt storage │
 │  notes/  — note CRUD via bbolt              │
 │  config/ — shared bbolt DB singleton        │
@@ -63,14 +60,12 @@ A plugin consists of:
 
 | Tab | Key | Description |
 |-----|-----|-------------|
-| Apps | ⌘1 | Fuzzy-search all installed macOS apps. Single click or Enter to launch. |
-| Clipboard | ⌘2 | Shows clipboard history captured by the background daemon. Click to copy & hide. |
-| Shell | ⌘3 | Inline shell executor with command history (localStorage, 50 items). ↑↓ to navigate history. |
-| Notes | ⌘4 | Save text snippets tagged as Note / TODO / Snippet / Idea. Stored in bbolt. |
+| Clipboard | ⌘1 | Shows clipboard history captured by the background daemon. Click to copy & hide. |
+| Notes | ⌘2 | Save text snippets tagged as Note / TODO / Snippet / Idea. Stored in bbolt. |
 
 ---
 
-## Data flow: Apps tab
+## Data flow: Clipboard tab
 
 ```
 onMount
@@ -127,4 +122,4 @@ Click ✕ on note
 
 ## Hotkey
 
-`Ctrl+Shift+Space` (registered via `golang.design/x/hotkey`) toggles window visibility globally. The Go side emits `Backend:GlobalHotkeyEvent` which the frontend listens to via `EventsOn`.
+`Option+Command+Space` (registered via `golang.design/x/hotkey`) toggles window visibility globally. The Go side emits `Backend:GlobalHotkeyEvent` which the frontend listens to via `Events.On`.

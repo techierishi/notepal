@@ -5,10 +5,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"reflect"
-	"rilaunch/pkg/config"
+	"notepal/pkg/config"
 	"strings"
 
-	"rilaunch/pkg/util"
+	"notepal/pkg/util"
 
 	goclipboard "golang.design/x/clipboard"
 )
